@@ -32,7 +32,8 @@
     <h2>Download Connection Manager</h2>
     <div class="downloads">
       {% for p, label, how in [('windows', 'Windows', 'Run ConnectionManager.exe - no install needed.'),
-                               ('linux', 'Ubuntu (desktop)', 'Extract, then run ./install.sh')] %}
+                               ('linux-deb', 'Ubuntu', 'Double-click the file, then Install. Asks for your password once; FreeRDP and PuTTY come with it.'),
+                               ('linux', 'Ubuntu - XFCE and other desktops', 'Use this if the .deb will not open: double-click to extract, then double-click ConnectionManager. It installs itself and adds itself to the menu.')] %}
         <div class="dl">
           <h3>{{ label }}</h3>
           {% set d = downloads[p] %}

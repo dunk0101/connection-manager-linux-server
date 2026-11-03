@@ -138,6 +138,17 @@ def test_version_and_download(env):
     assert v["clients"]["linux"]["version"] == "v1.0.1"
     assert c.get("/api/v1/downloads/linux", headers=h).data == b"hello"
     assert c.get("/api/v1/downloads/linux").status_code == 401
+    # v16.0.1: the .deb is offered separately ("linux-deb"); "linux" (tarball) stays for older clients.
+    d = os.path.join(tmp, "downloads", "linux-deb")
+    os.makedirs(d)
+    with open(os.path.join(d, "connection-manager_16.0.1_amd64.deb"), "wb") as f:
+        f.write(b"deb!")
+    with open(os.path.join(d, "manifest.json"), "w") as f:
+        json.dump({"version": "v16.0.1", "file": "connection-manager_16.0.1_amd64.deb", "sha256": "x", "size": 4}, f)
+    v = c.get("/api/v1/version", headers=h).json
+    assert v["clients"]["linux-deb"]["url"] == "/api/v1/downloads/linux-deb"
+    assert v["clients"]["linux"]["version"] == "v1.0.1"
+    assert c.get("/api/v1/downloads/linux-deb", headers=h).data == b"deb!"
 
 
 def test_website_admin(env):

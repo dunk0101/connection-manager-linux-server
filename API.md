@@ -48,9 +48,10 @@ A connection (as sent to clients - **no password**):
 
 | Method | Path | Body / answer |
 |---|---|---|
-| GET | `/api/v1/version` | `{"server_version", "api_version", "clients": {"windows": {"version", "file", "sha256", "size", "url"}, "linux": {...}}}` |
+| GET | `/api/v1/version` | `{"server_version", "api_version", "clients": {"windows": {"version", "file", "sha256", "size", "url"}, "linux": {...}, "linux-deb": {...}}}` |
 | GET | `/api/v1/downloads/windows` | `ConnectionManager.exe` |
-| GET | `/api/v1/downloads/linux` | `connection-manager-linux-x64.tar.gz` (folder `connection-manager/` with `ConnectionManager`, `icon.png`, `install.sh`) |
+| GET | `/api/v1/downloads/linux` | `connection-manager-linux-x64.tar.gz` (folder `connection-manager/` with `ConnectionManager`, `icon.png`, `install.sh`). Used by ~/.local installs and by v16.0.0 clients. |
+| GET | `/api/v1/downloads/linux-deb` | `connection-manager_X.Y.Z_amd64.deb` (v16.0.1+). Used by /opt (.deb) installs. |
 
 The builds and their `manifest.json` are made by `run.sh` from the newest
 `new-win-clinet/connection-manager-win-clinet-vX.Y.Z` and

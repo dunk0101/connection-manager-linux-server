@@ -237,7 +237,8 @@ public partial class ConnectionsViewModel : ObservableObject
             }
         }
 
-        string? error = await _main.Platform.LaunchAsync(conn, password, _main.Store.Settings.ShareClipboard);
+        string? error = await _main.Platform.LaunchAsync(conn, password, _main.Store.Settings.ShareClipboard,
+            s => Avalonia.Threading.Dispatcher.UIThread.Post(() => Status = s));
         if (error != null)
             Status = error;
         else if (!needsPassword || password.Length > 0)

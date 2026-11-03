@@ -86,7 +86,7 @@ public class SettingsStore
 }
 
 /// <summary>Version of this program, stamped in at build time from the folder name
-/// (connection-manager-...-clinet-v16.0.0 -> v16.0.0).</summary>
+/// (connection-manager-...-clinet-v16.0.1 -> v16.0.1).</summary>
 public static class AppInfo
 {
     public static string Version

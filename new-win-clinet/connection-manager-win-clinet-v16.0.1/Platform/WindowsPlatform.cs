@@ -51,7 +51,7 @@ public class WindowsPlatform : IPlatform
 
     // --- connecting ----------------------------------------------------------------------------
 
-    public Task<string?> LaunchAsync(Connection c, string password, bool shareClipboard)
+    public Task<string?> LaunchAsync(Connection c, string password, bool shareClipboard, Action<string>? status = null)
     {
         try
         {

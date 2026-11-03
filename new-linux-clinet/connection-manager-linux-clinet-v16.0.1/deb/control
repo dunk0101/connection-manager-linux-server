@@ -1,0 +1,15 @@
+Package: connection-manager
+Version: __VERSION__
+Section: net
+Priority: optional
+Architecture: amd64
+Maintainer: MLTech <duncan@mltech.co.uk>
+Depends: freerdp3-x11 | freerdp2-x11, putty, libx11-6, libice6, libsm6, libfontconfig1
+Suggests: rustdesk
+Installed-Size: __SIZE__
+Homepage: https://connection-manager.lloydstechnical.com/
+Description: Shared remote connections (RDP, Web, PuTTY, RustDesk)
+ Connection Manager keeps one shared list of remote connections on the
+ Connection Manager Server, so every Windows and Ubuntu PC that signs in
+ sees the same list. Opens Remote Desktop (FreeRDP), web pages, PuTTY (SSH)
+ and RustDesk connections with one click.

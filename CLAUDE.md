@@ -3,21 +3,29 @@
 - **What it is:** one server holding a shared list of remote connections (RDP, Web,
   PuTTY, RustDesk) plus two desktop clients (Windows, Ubuntu) that sign in to it.
   Replaces the old Windows-only Connection Manager v15.0.4 (its full source is in
-  `changelogs/01-baseline-...md`; the `old-win-pc-clinet/` folder may be deleted).
+  `changelogs/01-baseline-...md`; the old `old-win-pc-clinet/` folder was deleted).
 - **Server:** Python/Flask `code/app.py` (+ `db.py`, `keys.py`, `keyserver_client.py`),
   gunicorn `--workers 1` as the `connection-manager.service` systemd user unit on
   127.0.0.1:5100; nginx serves connection-manager.lloydstechnical.com
   (`code/deploy/`). Version = server folder name `connection-manager-server-vX.Y.Z`.
 - **Clients:** Avalonia 11.3 + .NET 10, one self-contained program each:
   - `new-win-clinet/connection-manager-win-clinet-vX.Y.Z/` -> `ConnectionManager.exe`
-  - `new-linux-clinet/connection-manager-linux-clinet-vX.Y.Z/` -> tarball with `install.sh`
+  - `new-linux-clinet/connection-manager-linux-clinet-vX.Y.Z/` -> TWO downloads (v16.0.1):
+    `connection-manager_X.Y.Z_amd64.deb` (key `linux-deb`; installs to /opt, Depends pulls in
+    freerdp3-x11 + putty; packaging files in the client's `deb/` folder) and
+    `connection-manager-linux-x64.tar.gz` (key `linux`; double-click ConnectionManager and it
+    installs itself to ~/.local/share/connection-manager - `LinuxPlatform.PrepareInstall`).
+    Keep building the tarball: v16.0.0 clients update from `linux`.
+  - Ubuntu users never type commands: missing FreeRDP/PuTTY are installed on Connect via
+    `pkexec apt-get` (password window), falling back to a terminal that only asks for the
+    password (`LinuxPlatform.InstallPackagesAsync`). A /opt install updates via the .deb.
   - The client version comes from its folder name (csproj `Version` regex). A new
     client version = copy the folder to a higher number; `run.sh` builds the newest
     folder of each into `code/downloads/` and the About tab offers it as an update.
   - The two client folders hold the SAME shared code (Models, Services, ViewModels,
     Views, Styles, App, Program). Only these differ: `Platform/WindowsPlatform.cs` vs
     `Platform/LinuxPlatform.cs`, `Platform/PlatformFactory.cs`, the csproj
-    (net10.0-windows/win-x64 + ProtectedData vs net10.0/linux-x64) and Linux `install.sh`.
+    (net10.0-windows/win-x64 + ProtectedData vs net10.0/linux-x64) and Linux `install.sh` + `deb/`.
     **A UI/logic change must be made in both** (copy the shared files across).
   - Tabs: Connections (must keep working exactly like the old program), Settings
     (clipboard, start with OS, start minimised + Server card), About (versions + Update).

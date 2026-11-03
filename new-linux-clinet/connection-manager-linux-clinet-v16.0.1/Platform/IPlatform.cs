@@ -23,8 +23,10 @@ public interface IPlatform
     string ProtectSecret(string plain);
     string UnprotectSecret(string protectedText);
 
-    /// <summary>Open a connection. Returns null on success or a message for the user.</summary>
-    Task<string?> LaunchAsync(Connection connection, string password, bool shareClipboard);
+    /// <summary>Open a connection. Returns null on success or a message for the user.
+    /// <paramref name="status"/> shows progress in the status line (e.g. "Installing FreeRDP…"
+    /// on Ubuntu when a helper program has to be installed first).</summary>
+    Task<string?> LaunchAsync(Connection connection, string password, bool shareClipboard, Action<string>? status = null);
 
     bool GetStartWithOs();
     void SetStartWithOs(bool enabled);

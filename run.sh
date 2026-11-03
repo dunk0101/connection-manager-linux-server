@@ -18,7 +18,8 @@
 #   6. BUILDS THE CLIENTS: the newest version folder in new-win-clinet/
 #      (connection-manager-win-clinet-vX.Y.Z -> ConnectionManager.exe) and in
 #      new-linux-clinet/ (connection-manager-linux-clinet-vX.Y.Z ->
-#      connection-manager-linux-x64.tar.gz) are built with dotnet into
+#      connection-manager-linux-x64.tar.gz AND connection-manager_X.Y.Z_amd64.deb)
+#      are built with dotnet (and dpkg-deb) into
 #      code/downloads/, with their version and SHA-256. Connection Manager's About
 #      tab offers them as updates. Skipped when nothing in a client changed.
 #   7. installs the connection-manager.service systemd user service, and the
@@ -116,54 +117,9 @@ newest_other_with() {
 can_ask() { [ -t 0 ]; }
 
 # --- 6. build one client ---------------------------------------------------------------
-# build_client <platform> <client parent dir> <prefix>
-build_client() {
-  local platform="$1" parent="$2" prefix="$3" src ver hash out manifest file stage
-  src="$(newest_in "$INSTALL_DIR/$parent" "$prefix")"
-  if [[ -z "$src" ]]; then
-    echo "  $platform: no $parent/${prefix}X.Y.Z folder - skipped."
-    return 0
-  fi
-  ver="v${src##*/"$prefix"}"
-  # Fingerprint of the client's source files: rebuild only when something changed.
-  hash="$( cd "$src" && find . -type f ! -path './bin/*' ! -path './obj/*' -print0 | sort -z \
-           | xargs -0 sha256sum | sha256sum | cut -c1-16 )"
-  out="$DOWNLOAD_DIR/$platform"
-  manifest="$out/manifest.json"
-  if [[ -f "$manifest" ]] && python3 - "$manifest" "$ver" "$hash" <<'PY'
-import json, os, sys
-m = json.load(open(sys.argv[1]))
-ok = m.get("version") == sys.argv[2] and m.get("source_hash") == sys.argv[3] \
-     and os.path.isfile(os.path.join(os.path.dirname(sys.argv[1]), m.get("file", "")))
-sys.exit(0 if ok else 1)
-PY
-  then
-    echo "  $platform: $ver already built (no changes)."
-    return 0
-  fi
-
-  echo "  $platform: building $ver from $(basename "$parent")/$(basename "$src") ..."
-  stage="$(mktemp -d)"
-  if ! dotnet publish "$src/ConnectionManager.csproj" -c Release -o "$stage/publish" -v quiet -nologo \
-        > "$stage/build.log" 2>&1; then
-    echo "error: the $platform client did not build:" >&2
-    grep -E "error|Error" "$stage/build.log" | head -20 >&2 || tail -20 "$stage/build.log" >&2
-    rm -rf "$stage"
-    return 1
-  fi
-  mkdir -p "$out"
-  if [[ "$platform" == "windows" ]]; then
-    file="ConnectionManager.exe"
-    cp "$stage/publish/ConnectionManager.exe" "$out/$file.new"
-  else
-    file="connection-manager-linux-x64.tar.gz"
-    mkdir -p "$stage/pkg/connection-manager"
-    cp "$stage/publish/ConnectionManager" "$src/Assets/icon.png" "$src/install.sh" "$stage/pkg/connection-manager/"
-    chmod 755 "$stage/pkg/connection-manager/ConnectionManager" "$stage/pkg/connection-manager/install.sh"
-    tar -czf "$out/$file.new" -C "$stage/pkg" connection-manager
-  fi
-  mv -f "$out/$file.new" "$out/$file"
-  python3 - "$out" "$file" "$ver" "$hash" <<'PY'
+# write_manifest <out dir> <file> <version> <source hash>
+write_manifest() {
+  python3 - "$1" "$2" "$3" "$4" <<'PY'
 import hashlib, json, os, sys, datetime
 out, file, ver, src_hash = sys.argv[1:5]
 path = os.path.join(out, file)
@@ -178,6 +134,94 @@ json.dump(m, open(tmp, "w"), indent=2)
 os.replace(tmp, os.path.join(out, "manifest.json"))
 print(f"  {ver}: {file}  ({m['size'] / 1048576:.1f} MB, sha256 {m['sha256'][:16]}...)")
 PY
+}
+# up_to_date <out dir> <version> <source hash>: is that build already there?
+up_to_date() {
+  [[ -f "$1/manifest.json" ]] && python3 - "$1/manifest.json" "$2" "$3" <<'PY'
+import json, os, sys
+m = json.load(open(sys.argv[1]))
+ok = m.get("version") == sys.argv[2] and m.get("source_hash") == sys.argv[3] \
+     and os.path.isfile(os.path.join(os.path.dirname(sys.argv[1]), m.get("file", "")))
+sys.exit(0 if ok else 1)
+PY
+}
+
+# build_client <platform> <client parent dir> <prefix>
+#   windows -> code/downloads/windows/ConnectionManager.exe
+#   linux   -> code/downloads/linux/connection-manager-linux-x64.tar.gz   (user install / older clients)
+#              code/downloads/linux-deb/connection-manager_X.Y.Z_amd64.deb  (double-click install)
+build_client() {
+  local platform="$1" parent="$2" prefix="$3" src ver hash stage file pkg size
+  src="$(newest_in "$INSTALL_DIR/$parent" "$prefix")"
+  if [[ -z "$src" ]]; then
+    echo "  $platform: no $parent/${prefix}X.Y.Z folder - skipped."
+    return 0
+  fi
+  ver="v${src##*/"$prefix"}"
+  # Fingerprint of the client's source files: rebuild only when something changed.
+  hash="$( cd "$src" && find . -type f ! -path './bin/*' ! -path './obj/*' -print0 | sort -z \
+           | xargs -0 sha256sum | sha256sum | cut -c1-16 )"
+  if [[ "$platform" == "windows" ]] && up_to_date "$DOWNLOAD_DIR/windows" "$ver" "$hash"; then
+    echo "  windows: $ver already built (no changes)."; return 0
+  fi
+  if [[ "$platform" == "linux" ]] && up_to_date "$DOWNLOAD_DIR/linux" "$ver" "$hash" \
+       && up_to_date "$DOWNLOAD_DIR/linux-deb" "$ver" "$hash"; then
+    echo "  linux: $ver already built (no changes)."; return 0
+  fi
+
+  echo "  $platform: building $ver from $(basename "$parent")/$(basename "$src") ..."
+  stage="$(mktemp -d)"
+  if ! dotnet publish "$src/ConnectionManager.csproj" -c Release -o "$stage/publish" -v quiet -nologo \
+        > "$stage/build.log" 2>&1; then
+    echo "error: the $platform client did not build:" >&2
+    grep -E "error|Error" "$stage/build.log" | head -20 >&2 || tail -20 "$stage/build.log" >&2
+    rm -rf "$stage"
+    return 1
+  fi
+
+  if [[ "$platform" == "windows" ]]; then
+    mkdir -p "$DOWNLOAD_DIR/windows"
+    file="ConnectionManager.exe"
+    cp "$stage/publish/ConnectionManager.exe" "$DOWNLOAD_DIR/windows/$file.new"
+    mv -f "$DOWNLOAD_DIR/windows/$file.new" "$DOWNLOAD_DIR/windows/$file"
+    write_manifest "$DOWNLOAD_DIR/windows" "$file" "$ver" "$hash"
+    rm -rf "$stage"
+    return 0
+  fi
+
+  # Linux 1: the tarball (extract, double-click ConnectionManager - it installs itself).
+  mkdir -p "$DOWNLOAD_DIR/linux" "$stage/tar/connection-manager"
+  file="connection-manager-linux-x64.tar.gz"
+  cp "$stage/publish/ConnectionManager" "$src/Assets/icon.png" "$src/install.sh" "$stage/tar/connection-manager/"
+  chmod 755 "$stage/tar/connection-manager/ConnectionManager" "$stage/tar/connection-manager/install.sh"
+  tar -czf "$DOWNLOAD_DIR/linux/$file.new" -C "$stage/tar" connection-manager
+  mv -f "$DOWNLOAD_DIR/linux/$file.new" "$DOWNLOAD_DIR/linux/$file"
+  write_manifest "$DOWNLOAD_DIR/linux" "$file" "$ver" "$hash"
+
+  # Linux 2: the .deb (double-click -> App Center; brings FreeRDP and PuTTY with it).
+  if ! command -v dpkg-deb >/dev/null; then
+    echo "  WARNING: dpkg-deb is missing - the .deb was not built."
+    rm -rf "$stage"; return 0
+  fi
+  pkg="$stage/deb"
+  mkdir -p "$pkg/DEBIAN" "$pkg/opt/connection-manager" "$pkg/usr/bin" "$pkg/usr/share/applications" \
+           "$pkg/usr/share/icons/hicolor/512x512/apps"
+  install -m 755 "$stage/publish/ConnectionManager" "$pkg/opt/connection-manager/ConnectionManager"
+  install -m 644 "$src/Assets/icon.png" "$pkg/opt/connection-manager/icon.png"
+  install -m 644 "$src/Assets/icon.png" "$pkg/usr/share/icons/hicolor/512x512/apps/connection-manager.png"
+  install -m 644 "$src/deb/connection-manager.desktop" "$pkg/usr/share/applications/connection-manager.desktop"
+  ln -s /opt/connection-manager/ConnectionManager "$pkg/usr/bin/connection-manager"
+  install -m 755 "$src/deb/postinst" "$src/deb/postrm" "$pkg/DEBIAN/"
+  size="$(du -sk --exclude=DEBIAN "$pkg" | cut -f1)"
+  sed -e "s/__VERSION__/${ver#v}/" -e "s/__SIZE__/$size/" "$src/deb/control" > "$pkg/DEBIAN/control"
+  mkdir -p "$DOWNLOAD_DIR/linux-deb"
+  rm -f "$DOWNLOAD_DIR"/linux-deb/*.deb
+  file="connection-manager_${ver#v}_amd64.deb"
+  if ! dpkg-deb --root-owner-group -Zxz --build "$pkg" "$DOWNLOAD_DIR/linux-deb/$file" > "$stage/deb.log" 2>&1; then
+    echo "error: the .deb did not build:" >&2; cat "$stage/deb.log" >&2
+    rm -rf "$stage"; return 1
+  fi
+  write_manifest "$DOWNLOAD_DIR/linux-deb" "$file" "$ver" "$hash"
   rm -rf "$stage"
 }
 
@@ -465,7 +509,7 @@ cat <<EOF
     http://127.0.0.1:$PORT/   (this machine only)
 
   Client builds offered as updates (code/downloads/):
-$(for p in windows linux; do [[ -f "$DOWNLOAD_DIR/$p/manifest.json" ]] && python3 -c "import json;m=json.load(open('$DOWNLOAD_DIR/$p/manifest.json'));print(f'    $p: {m[\"version\"]}  {m[\"file\"]}')"; done)
+$(for p in windows linux linux-deb; do [[ -f "$DOWNLOAD_DIR/$p/manifest.json" ]] && python3 -c "import json;m=json.load(open('$DOWNLOAD_DIR/$p/manifest.json'));print(f'    $p: {m[\"version\"]}  {m[\"file\"]}')"; done)
 
   After any restart it needs the Key Server to be unlocked.
 

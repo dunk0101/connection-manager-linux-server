@@ -1,5 +1,5 @@
 """
-Connection Manager Server (v1.0.0) - main server program.
+Connection Manager Server - main server program.
 
 PLAIN-ENGLISH DESCRIPTION
 -------------------------
@@ -80,7 +80,7 @@ PORT = 5100
 BACKUP_DIR = os.path.join(db.DATA_DIR, "backups")
 BACKUPS_KEPT = 30
 DOWNLOAD_DIR = os.environ.get("CONNMGR_DOWNLOAD_DIR") or os.path.join(CODE_DIR, "downloads")
-PLATFORMS = ("windows", "linux")
+PLATFORMS = ("windows", "linux", "linux-deb")   # linux = .tar.gz, linux-deb = .deb (v16.0.1)
 MAX_FAILED_LOGINS = 5
 LOCKOUT_SECONDS = 15 * 60
 MAX_TOKENS_PER_USER = 25

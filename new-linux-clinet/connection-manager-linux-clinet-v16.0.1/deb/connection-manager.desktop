@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Connection Manager
+GenericName=Remote Connections
+Comment=Shared remote connections (RDP, Web, PuTTY, RustDesk)
+Exec=/usr/bin/connection-manager
+Icon=connection-manager
+Terminal=false
+Categories=Network;RemoteAccess;
+StartupWMClass=ConnectionManager
