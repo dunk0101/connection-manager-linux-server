@@ -212,6 +212,7 @@ build_client() {
   install -m 644 "$src/deb/connection-manager.desktop" "$pkg/usr/share/applications/connection-manager.desktop"
   ln -s /opt/connection-manager/ConnectionManager "$pkg/usr/bin/connection-manager"
   install -m 755 "$src/deb/postinst" "$src/deb/postrm" "$pkg/DEBIAN/"
+  find "$pkg" -type d -exec chmod 755 {} +          # standard package folder permissions
   size="$(du -sk --exclude=DEBIAN "$pkg" | cut -f1)"
   sed -e "s/__VERSION__/${ver#v}/" -e "s/__SIZE__/$size/" "$src/deb/control" > "$pkg/DEBIAN/control"
   mkdir -p "$DOWNLOAD_DIR/linux-deb"
