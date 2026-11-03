@@ -1,0 +1,77 @@
+<Window xmlns="https://github.com/avaloniaui"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:vm="using:ConnectionManager.ViewModels"
+        xmlns:v="using:ConnectionManager.Views"
+        x:Class="ConnectionManager.Views.MainWindow"
+        x:DataType="vm:MainViewModel"
+        Title="Connection Manager"
+        Icon="/Assets/icon.png"
+        Width="600" Height="900" MinWidth="420" MinHeight="420"
+        WindowStartupLocation="CenterScreen"
+        Background="{DynamicResource CmWindowBg}">
+
+  <Grid RowDefinitions="Auto,*">
+
+    <!-- Header -->
+    <Border Grid.Row="0" Background="{StaticResource CmHeaderBrush}" Padding="18,14">
+      <Grid ColumnDefinitions="Auto,*,Auto">
+        <Border Width="40" Height="40" CornerRadius="10" Background="#33FFFFFF" Margin="0,0,12,0">
+          <Image Source="/Assets/icon.png" Width="28" Height="28"/>
+        </Border>
+        <StackPanel Grid.Column="1" VerticalAlignment="Center">
+          <TextBlock Text="Connection Manager" FontSize="19" FontWeight="SemiBold" Foreground="White"/>
+          <TextBlock Text="{Binding HeaderSubtitle}" FontSize="12" Foreground="#D6E9F8"/>
+        </StackPanel>
+        <StackPanel Grid.Column="2" Orientation="Horizontal" Spacing="8" VerticalAlignment="Center"
+                    IsVisible="{Binding IsSignedIn}">
+          <Button Classes="header" Command="{Binding ShowAboutCommand}"
+                  IsVisible="{Binding About.IsUpdateAvailable}" ToolTip.Tip="A newer Connection Manager is on the server">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <PathIcon Width="11" Height="11" Foreground="White" Data="M 6,0 L 6,8 M 2,5 L 6,9 L 10,5 M 0,11 L 12,11"/>
+              <TextBlock Text="Update"/>
+            </StackPanel>
+          </Button>
+          <Border CornerRadius="999" Background="#26FFFFFF" Padding="10,5">
+            <StackPanel Orientation="Horizontal" Spacing="6">
+              <Ellipse Classes="dot" Classes.online="{Binding IsServerReachable}" Width="8" Height="8"/>
+              <TextBlock Text="{Binding ServerStatusText}" FontSize="12" Foreground="White"/>
+            </StackPanel>
+          </Border>
+        </StackPanel>
+      </Grid>
+    </Border>
+
+    <!-- Tabs -->
+    <TabControl Grid.Row="1" SelectedIndex="{Binding SelectedTabIndex}" Margin="8,2,8,0">
+      <TabItem Header="Connections">
+        <v:ConnectionsView DataContext="{Binding Connections}"/>
+      </TabItem>
+      <TabItem Header="Settings">
+        <v:SettingsView DataContext="{Binding Settings}"/>
+      </TabItem>
+      <TabItem Header="About">
+        <v:AboutView DataContext="{Binding About}"/>
+      </TabItem>
+    </TabControl>
+
+    <!-- Upload old connections (Windows, first sign-in) -->
+    <Border Grid.RowSpan="2" Classes="overlay" IsVisible="{Binding ShowImportPrompt}">
+      <Border Classes="dialog" MaxWidth="460">
+        <StackPanel Spacing="14">
+          <TextBlock Classes="h1" Text="Bring your connections across?"/>
+          <TextBlock Text="{Binding ImportPromptText}" TextWrapping="Wrap" Foreground="{DynamicResource CmText}"/>
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+            <Button Content="Not now" Command="{Binding DismissImportCommand}"/>
+            <Button Classes="accent" Content="Upload to server" Command="{Binding UploadOldConnectionsCommand}"
+                    IsEnabled="{Binding !IsImporting}"/>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </Border>
+
+    <!-- Sign in -->
+    <Panel Grid.RowSpan="2" IsVisible="{Binding !IsSignedIn}">
+      <v:SignInView DataContext="{Binding SignIn}"/>
+    </Panel>
+  </Grid>
+</Window>

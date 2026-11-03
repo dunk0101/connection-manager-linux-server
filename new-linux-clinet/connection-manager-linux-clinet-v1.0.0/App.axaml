@@ -1,0 +1,68 @@
+<Application xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:v="using:ConnectionManager.Views"
+             x:Class="ConnectionManager.App"
+             Name="Connection Manager"
+             RequestedThemeVariant="Default">
+
+  <Application.Resources>
+    <ResourceDictionary>
+      <ResourceDictionary.ThemeDictionaries>
+        <!-- Light: the old program's TeamViewer-style blue and white -->
+        <ResourceDictionary x:Key="Light">
+          <SolidColorBrush x:Key="CmWindowBg" Color="#F3F5F8"/>
+          <SolidColorBrush x:Key="CmSurface" Color="#FFFFFF"/>
+          <SolidColorBrush x:Key="CmRowHover" Color="#EEF6FC"/>
+          <SolidColorBrush x:Key="CmRowSelected" Color="#DCEEFB"/>
+          <SolidColorBrush x:Key="CmRowSelectedBorder" Color="#0070C0"/>
+          <SolidColorBrush x:Key="CmBorder" Color="#E2E8F0"/>
+          <SolidColorBrush x:Key="CmText" Color="#1F2933"/>
+          <SolidColorBrush x:Key="CmTextMuted" Color="#64748B"/>
+          <SolidColorBrush x:Key="CmBannerBg" Color="#FFF4E5"/>
+          <SolidColorBrush x:Key="CmBannerText" Color="#8A4B00"/>
+          <SolidColorBrush x:Key="CmOkBg" Color="#E8F5E9"/>
+          <SolidColorBrush x:Key="CmOkText" Color="#2E7D32"/>
+          <SolidColorBrush x:Key="CmErrBg" Color="#FFEBEE"/>
+          <SolidColorBrush x:Key="CmErrText" Color="#C62828"/>
+          <SolidColorBrush x:Key="CmOverlay" Color="#66000000"/>
+        </ResourceDictionary>
+        <ResourceDictionary x:Key="Dark">
+          <SolidColorBrush x:Key="CmWindowBg" Color="#0F172A"/>
+          <SolidColorBrush x:Key="CmSurface" Color="#1E293B"/>
+          <SolidColorBrush x:Key="CmRowHover" Color="#24364D"/>
+          <SolidColorBrush x:Key="CmRowSelected" Color="#1D3B5C"/>
+          <SolidColorBrush x:Key="CmRowSelectedBorder" Color="#3B9BE0"/>
+          <SolidColorBrush x:Key="CmBorder" Color="#334155"/>
+          <SolidColorBrush x:Key="CmText" Color="#E2E8F0"/>
+          <SolidColorBrush x:Key="CmTextMuted" Color="#94A3B8"/>
+          <SolidColorBrush x:Key="CmBannerBg" Color="#3A2A10"/>
+          <SolidColorBrush x:Key="CmBannerText" Color="#FFC870"/>
+          <SolidColorBrush x:Key="CmOkBg" Color="#12351C"/>
+          <SolidColorBrush x:Key="CmOkText" Color="#81C784"/>
+          <SolidColorBrush x:Key="CmErrBg" Color="#3B1515"/>
+          <SolidColorBrush x:Key="CmErrText" Color="#EF9A9A"/>
+          <SolidColorBrush x:Key="CmOverlay" Color="#99000000"/>
+        </ResourceDictionary>
+      </ResourceDictionary.ThemeDictionaries>
+
+      <SolidColorBrush x:Key="CmAccent" Color="#0070C0"/>
+      <SolidColorBrush x:Key="CmOnline" Color="#22A559"/>
+      <SolidColorBrush x:Key="CmOffline" Color="#DC3545"/>
+      <LinearGradientBrush x:Key="CmHeaderBrush" StartPoint="0%,0%" EndPoint="100%,100%">
+        <GradientStop Offset="0" Color="#005A9E"/>
+        <GradientStop Offset="1" Color="#0A84D6"/>
+      </LinearGradientBrush>
+      <v:TypeToBrushConverter x:Key="TypeToBrush"/>
+    </ResourceDictionary>
+  </Application.Resources>
+
+  <Application.Styles>
+    <FluentTheme>
+      <FluentTheme.Palettes>
+        <ColorPaletteResources x:Key="Light" Accent="#0070C0" RegionColor="#FFFFFF" ErrorText="#C62828"/>
+        <ColorPaletteResources x:Key="Dark" Accent="#2B8CD6" RegionColor="#1E293B" ErrorText="#EF9A9A"/>
+      </FluentTheme.Palettes>
+    </FluentTheme>
+    <StyleInclude Source="avares://ConnectionManager/Styles/Theme.axaml"/>
+  </Application.Styles>
+</Application>

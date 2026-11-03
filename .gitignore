@@ -1,0 +1,39 @@
+# Connection Manager Server - only the PROGRAM CODE goes to GitHub.
+# run.sh refuses to back up unless each of these lines is present.
+code/data/
+code/config-files/
+code/.venv/
+code/downloads/
+old-win-pc-clinet/
+
+# Kept on this server only: the change logs and the Claude session logs can
+# mention server names, IP addresses and usernames.
+changelogs/
+context/
+
+# code/data/ holds connections.db (the shared connection list, with every
+# password encrypted by the Key Server key), the user accounts, the daily
+# backups and the Key Server identity; code/config-files/ holds the Key Server
+# settings; code/downloads/ holds the built clients (run.sh rebuilds them).
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.enc
+*.key
+*.secret
+*.pem
+*.zip
+*.exe
+*.tar.gz
+keyserver.json
+keyserver_identity.json
+.env
+
+# Build output (dotnet) and caches
+bin/
+obj/
+.venv/
+__pycache__/
+*.pyc
+.pytest_cache/

@@ -1,0 +1,68 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ConnectionManager.ViewModels"
+             x:Class="ConnectionManager.Views.AboutView"
+             x:DataType="vm:AboutViewModel">
+
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel MaxWidth="620" Margin="8,20,12,16">
+
+      <!-- Icon and name -->
+      <StackPanel HorizontalAlignment="Center" Margin="0,4,0,22" Spacing="4">
+        <Border Width="96" Height="96" CornerRadius="22" Background="{DynamicResource CmSurface}"
+                BorderBrush="{DynamicResource CmBorder}" BorderThickness="1" HorizontalAlignment="Center"
+                BoxShadow="0 4 14 0 #22000000" Margin="0,0,0,12">
+          <Image Source="/Assets/icon.png" Width="68" Height="68"/>
+        </Border>
+        <TextBlock Text="{Binding ApplicationName}" FontSize="26" FontWeight="SemiBold"
+                   Foreground="{DynamicResource CmText}" HorizontalAlignment="Center"/>
+        <TextBlock HorizontalAlignment="Center" FontSize="14" Foreground="{DynamicResource CmTextMuted}">
+          <Run Text="Version"/>
+          <Run Text="{Binding Version}"/>
+          <Run Text="for"/>
+          <Run Text="{Binding PlatformName}"/>
+        </TextBlock>
+      </StackPanel>
+
+      <!-- Versions and update -->
+      <TextBlock Classes="h2" Text="Version"/>
+      <Border Classes="card">
+        <StackPanel Spacing="12">
+          <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto" >
+            <TextBlock Grid.Row="0" Classes="muted" Text="This PC" Margin="0,0,0,6"/>
+            <TextBlock Grid.Row="0" Grid.Column="1" Text="{Binding Version}" FontWeight="SemiBold" Foreground="{DynamicResource CmText}"/>
+            <TextBlock Grid.Row="1" Classes="muted" Text="Newest Connection Manager on the server" Margin="0,0,0,6"/>
+            <TextBlock Grid.Row="1" Grid.Column="1" Text="{Binding LatestVersion}" FontWeight="SemiBold" Foreground="{DynamicResource CmText}"/>
+            <TextBlock Grid.Row="2" Classes="muted" Text="Server"/>
+            <TextBlock Grid.Row="2" Grid.Column="1" Text="{Binding ServerVersion}" FontWeight="SemiBold" Foreground="{DynamicResource CmText}"/>
+          </Grid>
+
+          <Border Background="{DynamicResource CmOkBg}" CornerRadius="8" Padding="12,9" IsVisible="{Binding IsUpdateAvailable}">
+            <TextBlock Foreground="{DynamicResource CmOkText}" TextWrapping="Wrap" FontSize="13"
+                       Text="A newer version of Connection Manager is available on the server. Click Update to install it - Connection Manager restarts by itself."/>
+          </Border>
+
+          <StackPanel Orientation="Horizontal" Spacing="10">
+            <Button Classes="accent" Content="{Binding UpdateButtonText}" Command="{Binding UpdateCommand}"
+                    IsVisible="{Binding IsUpdateAvailable}" IsEnabled="{Binding !IsUpdating}"/>
+            <Button Content="Check for updates" Command="{Binding CheckForUpdatesCommand}"
+                    IsEnabled="{Binding !IsChecking}"/>
+          </StackPanel>
+          <ProgressBar Value="{Binding Progress}" Maximum="100" Height="6" IsVisible="{Binding IsUpdating}"/>
+          <TextBlock Classes="muted" Text="{Binding UpdateStatus}"
+                     IsVisible="{Binding UpdateStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+        </StackPanel>
+      </Border>
+
+      <!-- Description -->
+      <TextBlock Classes="h2" Text="About"/>
+      <Border Classes="card">
+        <TextBlock Text="{Binding Description}" TextWrapping="Wrap" LineHeight="21" FontSize="13"
+                   Foreground="{DynamicResource CmText}"/>
+      </Border>
+
+      <TextBlock Text="{Binding Copyright}" FontSize="12" Foreground="{DynamicResource CmTextMuted}"
+                 HorizontalAlignment="Center" Margin="0,4,0,8"/>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

@@ -1,0 +1,20 @@
+# nginx site for the Connection Manager Server. install-nginx-site.sh copies this
+# to /etc/nginx/sites-available/ and certbot then adds HTTPS to it.
+server {
+    listen 80;
+    listen [::]:80;
+    server_name connection-manager.lloydstechnical.com;
+
+    # Client builds are downloaded through here (Windows .exe is ~40-70 MB).
+    client_max_body_size 5m;
+    proxy_read_timeout 300s;
+    proxy_max_temp_file_size 0;
+
+    location / {
+        proxy_pass http://127.0.0.1:5100;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}

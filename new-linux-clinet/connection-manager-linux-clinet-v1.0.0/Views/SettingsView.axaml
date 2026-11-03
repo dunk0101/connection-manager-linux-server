@@ -1,0 +1,71 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ConnectionManager.ViewModels"
+             x:Class="ConnectionManager.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel MaxWidth="620" Margin="8,16,12,16">
+
+      <!-- Remote Desktop Security (same as the old program) -->
+      <TextBlock Classes="h2" Text="Remote Desktop Security"/>
+      <Border Classes="card">
+        <StackPanel>
+          <TextBlock Text="Allow the remote computer to access the following resources on my computer:"
+                     FontWeight="SemiBold" TextWrapping="Wrap" Foreground="{DynamicResource CmText}" Margin="0,0,0,10"/>
+          <CheckBox Content="Clipboard" IsChecked="{Binding ShareClipboard}"/>
+          <TextBlock Classes="muted" Margin="28,6,0,0"
+                     Text="When enabled, every RDP connection can share the clipboard between this computer and the remote computer (copy and paste both ways)."/>
+        </StackPanel>
+      </Border>
+
+      <!-- Startup -->
+      <TextBlock Classes="h2" Text="Startup"/>
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <CheckBox Content="{Binding StartWithOsLabel}" IsChecked="{Binding StartWithOs}"/>
+          <CheckBox Content="Start with Connection Manager Minimised" IsChecked="{Binding StartMinimized}"/>
+        </StackPanel>
+      </Border>
+
+      <!-- Server -->
+      <TextBlock Classes="h2" Text="Server"/>
+      <Border Classes="card">
+        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+          <StackPanel Grid.RowSpan="2" Spacing="2">
+            <TextBlock Text="{Binding ServerUrl}" FontWeight="SemiBold" Foreground="{DynamicResource CmText}"
+                       TextTrimming="CharacterEllipsis"/>
+            <TextBlock Classes="muted">
+              <Run Text="Signed in as"/>
+              <Run Text="{Binding SignedInAs}" FontWeight="SemiBold"/>
+            </TextBlock>
+            <TextBlock Classes="muted" Margin="0,6,0,0"
+                       Text="The connection list is shared through this server. These settings are kept on this PC only."/>
+          </StackPanel>
+          <Button Grid.Column="1" Content="Sign out" Classes="danger" VerticalAlignment="Top" Margin="12,0,0,0"
+                  Command="{Binding SignOutCommand}"/>
+        </Grid>
+      </Border>
+
+      <!-- Status message -->
+      <Border CornerRadius="8" Padding="12,9" Classes="status" Classes.fail="{Binding !IsStatusSuccess}"
+              IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+        <Border.Styles>
+          <Style Selector="Border.status">
+            <Setter Property="Background" Value="{DynamicResource CmOkBg}"/>
+          </Style>
+          <Style Selector="Border.status TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource CmOkText}"/>
+          </Style>
+          <Style Selector="Border.status.fail">
+            <Setter Property="Background" Value="{DynamicResource CmErrBg}"/>
+          </Style>
+          <Style Selector="Border.status.fail TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource CmErrText}"/>
+          </Style>
+        </Border.Styles>
+        <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap" FontSize="13"/>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>

@@ -1,0 +1,19 @@
+# Template: run.sh replaces __INSTALL_DIR__ with the chosen version folder and
+# writes the result to ~/.config/systemd/user/connection-manager.service.
+[Unit]
+Description=Connection Manager Server (connection-manager.lloydstechnical.com)
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=__INSTALL_DIR__/code
+# One worker (with threads): SQLite with one writer process. --timeout 120: at
+# start-up the app waits (up to 100 s) for its keys from the Key Server.
+ExecStart=__INSTALL_DIR__/code/.venv/bin/gunicorn --workers 1 --threads 8 --timeout 120 --bind 127.0.0.1:5100 app:app
+Restart=on-failure
+RestartSec=5
+# New files the app creates (database, backups) are private to this user.
+UMask=0077
+
+[Install]
+WantedBy=default.target

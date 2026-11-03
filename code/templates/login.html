@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Sign in · Connection Manager</title>
+  <link rel="icon" href="{{ url_for('static', filename='icon.png') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+<body>
+  <div class="login-box wrap">
+    <div class="card">
+      <div class="logo"><img src="{{ url_for('static', filename='icon.png') }}" alt=""></div>
+      <h1>Connection Manager</h1>
+      <p class="sub">Server {{ version }}</p>
+      {% if error %}<div class="flash error">{{ error }}</div>{% endif %}
+      <form method="post">
+        <input type="hidden" name="csrf" value="{{ csrf }}">
+        <label for="username">Username</label>
+        <input type="text" id="username" name="username" value="{{ username }}" autocomplete="username" autofocus required>
+        <label for="password">Password</label>
+        <input type="password" id="password" name="password" autocomplete="current-password" required>
+        <button type="submit">Sign in</button>
+      </form>
+    </div>
+  </div>
+</body>
+</html>
