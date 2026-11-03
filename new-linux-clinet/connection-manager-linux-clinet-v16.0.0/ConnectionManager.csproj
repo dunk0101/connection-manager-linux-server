@@ -3,7 +3,7 @@
   <!--
     Connection Manager for Ubuntu (desktop). Avalonia UI on .NET 10.
     The version is taken from this folder's name:
-      connection-manager-linux-clinet-v1.0.0  ->  1.0.0
+      connection-manager-linux-clinet-v16.0.0  ->  16.0.0
     so a new version is made by copying the folder to a new version number.
     Build (run.sh does this):  dotnet publish -c Release
   -->
