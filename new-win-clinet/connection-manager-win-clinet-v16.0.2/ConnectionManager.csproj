@@ -1,0 +1,50 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!--
+    Connection Manager for Windows. Avalonia UI on .NET 10.
+    The version is taken from this folder's name:
+      connection-manager-win-clinet-v16.0.1  ->  16.0.1
+    so a new version is made by copying the folder to a new version number.
+    Build (run.sh does this):  dotnet publish -c Release
+  -->
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <AssemblyName>ConnectionManager</AssemblyName>
+    <RootNamespace>ConnectionManager</RootNamespace>
+    <AvaloniaUseCompiledBindingsByDefault>true</AvaloniaUseCompiledBindingsByDefault>
+    <ApplicationIcon>Assets/icon.ico</ApplicationIcon>
+    <Authors>MLTech</Authors>
+    <Product>Connection Manager</Product>
+    <Description>Shared remote connections (RDP, Web, PuTTY, RustDesk) from the Connection Manager Server</Description>
+
+    <FolderName>$([System.IO.Path]::GetFileName($(MSBuildProjectDirectory)))</FolderName>
+    <Version Condition="$([System.Text.RegularExpressions.Regex]::IsMatch($(FolderName), '-v\d+\.\d+\.\d+$'))">$([System.Text.RegularExpressions.Regex]::Replace($(FolderName), '^.*-v', ''))</Version>
+
+    <!-- One self-contained program file (no .NET install needed on the PC) -->
+    <RuntimeIdentifier>win-x64</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <InvariantGlobalization>true</InvariantGlobalization>
+    <DebugType>none</DebugType>
+    <SatelliteResourceLanguages>en</SatelliteResourceLanguages>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <AvaloniaResource Include="Assets\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Avalonia" Version="11.3.22" />
+    <PackageReference Include="Avalonia.Desktop" Version="11.3.22" />
+    <PackageReference Include="Avalonia.Themes.Fluent" Version="11.3.22" />
+    <PackageReference Include="Avalonia.Fonts.Inter" Version="11.3.22" />
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="System.Security.Cryptography.ProtectedData" Version="10.0.14" />
+  </ItemGroup>
+
+</Project>
