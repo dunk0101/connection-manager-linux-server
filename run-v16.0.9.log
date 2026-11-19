@@ -1,0 +1,33 @@
+
+==> Newest version found in /home/mltech/code/connection-manager-server
+Running Connection Manager Server v16.0.9 from /home/mltech/code/connection-manager-server/connection-manager-server-v16.0.9
+
+==> Checking system prerequisites
+All system prerequisites are installed.
+
+==> Stopping any running Connection Manager Server (any version)
+The service was not running.
+
+==> Checking the data (code/data code/config-files)
+This version already has its data.
+Data folders are private to mltech (folders 700, files 600).
+
+==> Installing dependencies (code/.venv)
+Dependencies installed.
+
+==> Building the Connection Manager clients (Windows + Ubuntu)
+  windows: v16.0.9 already built (no changes).
+  linux: building v16.0.9 from new-linux-clinet/connection-manager-linux-clinet-v16.0.9 ...
+  v16.0.9: connection-manager-linux-x64.tar.gz  (39.0 MB, sha256 deb0616db3c89cca...)
+  v16.0.9: connection-manager_16.0.9_amd64.deb  (37.8 MB, sha256 9bcd3b7eec65b99c...)
+
+==> Installing the systemd user service for v16.0.9
+Service file written: /home/mltech/.config/systemd/user/connection-manager.service
+Lingering is on - Connection Manager Server starts at boot without anyone logged in.
+
+==> Starting Connection Manager Server v16.0.9
+Waiting for it to answer (it first fetches its keys from the Key Server - up to 130s)...
+Confirmed: Connection Manager Server v16.0.9 is running.
+
+==> Backing up the v16.0.9 code to git (no connection data, passwords or builds)
+Carried the git history forward from v16.0.8.
