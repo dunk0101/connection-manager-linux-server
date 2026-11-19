@@ -68,3 +68,21 @@ header button.secondary:hover { background: rgba(255,255,255,.15); }
 .login-box label { display: block; font-size: 13px; font-weight: 600; margin: 12px 0 5px; }
 .login-box button { width: 100%; margin-top: 20px; padding: 11px; }
 footer { text-align: center; color: var(--muted); font-size: 12px; padding: 18px; }
+
+/* Signed-in PCs: badge, name and rename-in-place (v16.0.8) */
+.card-intro { margin: -6px 0 14px; }
+.pc { display: flex; align-items: center; gap: 12px; min-width: 220px; }
+.pc-symbol { flex: 0 0 auto; border-radius: 50%; box-shadow: 0 0 0 2px var(--card), 0 0 0 3px var(--border); }
+.pc-text { min-width: 0; flex: 1; }
+.pc-view { display: flex; align-items: center; gap: 6px; }
+.pc-name { font-weight: 600; overflow-wrap: anywhere; }
+.icon-btn { background: transparent; color: var(--muted); border: 1px solid transparent; padding: 4px 6px;
+            line-height: 0; border-radius: 6px; }
+.icon-btn:hover { background: var(--hover); color: var(--blue); border-color: var(--border); }
+.icon-btn:focus-visible { outline: 2px solid var(--blue); outline-offset: 1px; }
+.pc-rename { display: flex; gap: 6px; align-items: center; margin: 0; flex-wrap: wrap; }
+.pc-rename input[type=text] { width: auto; flex: 1 1 180px; padding: 6px 9px; font-size: 14px; }
+.pc-rename button { padding: 6px 12px; font-size: 13px; }
+.js .pc-rename { display: none; }
+.js .pc-row.editing .pc-rename { display: flex; }
+.js .pc-row.editing .pc-view { display: none; }

@@ -174,6 +174,103 @@ def test_auto_update_switch(env):
     assert b"Automatically update Connection Manager on every PC" in c.get("/").data
 
 
+def _sign_in_device(c, user, name, device_id):
+    r = c.post("/api/v1/auth/token", json={"username": user, "password": "password123", "device_name": name,
+                                           "platform": "windows", "device_id": device_id})
+    assert r.status_code == 200, r.json
+    return {"Authorization": "Bearer " + r.json["token"]}, r.json["device"]
+
+
+def _website_login(c, user):
+    with c.session_transaction() as s:
+        s["csrf"] = "t"
+    c.post("/login", data={"username": user, "password": "password123", "csrf": "t"})
+    with c.session_transaction() as s:
+        s["csrf"] = "t"
+
+
+def test_device_badges_unique_and_kept(env):
+    app_mod, _ = env
+    c = app_mod.app.test_client()
+    devices = [_sign_in_device(c, "bob", "SAME-NAME", f"id-{i}")[1] for i in range(10)]
+    symbols = [d["symbol"] for d in devices]
+    assert len(set(symbols)) == 10                           # every PC has its own badge
+    assert all(s in app_mod.db.ALL_SYMBOLS for s in symbols)
+    # Sign out and in again on the same PC: same badge back.
+    h, first = _sign_in_device(c, "bob", "PC-A", "keep-me")
+    c.delete("/api/v1/auth/token", headers=h)
+    _, again = _sign_in_device(c, "bob", "PC-A", "keep-me")
+    assert again["symbol"] == first["symbol"]
+
+
+def test_device_rename_api_and_revision(env):
+    app_mod, _ = env
+    c = app_mod.app.test_client()
+    h, dev = _sign_in_device(c, "bob", "DUNCAN-MIDDLEMU", "dev-1")
+    assert dev["name"] == "DUNCAN-MIDDLEMU"
+    r = c.put("/api/v1/device", headers=h, json={"name": "  duncan-middlemuir-pc "})
+    assert r.status_code == 200 and r.json["name"] == "duncan-middlemuir-pc"
+    assert r.json["symbol"] == dev["symbol"]
+    for bad in ("", "   ", "x" * 61, "<script>", "a/b"):
+        assert c.put("/api/v1/device", headers=h, json={"name": bad}).status_code == 400
+    rev = c.get("/api/v1/revision", headers=h).json
+    assert rev["device"] == {"name": "duncan-middlemuir-pc", "symbol": dev["symbol"]}
+    assert c.get("/api/v1/auth/me", headers=h).json["device"]["name"] == "duncan-middlemuir-pc"
+
+
+def test_old_pc_records_device_id(env):
+    app_mod, _ = env
+    c = app_mod.app.test_client()
+    h = sign_in(c)                                           # an older client: no device_id
+    sym = c.get("/api/v1/revision", headers=h).json["device"]["symbol"]
+    c.get("/api/v1/revision", headers={**h, "X-Device-Id": "later-id"})
+    c.delete("/api/v1/auth/token", headers=h)
+    _, again = _sign_in_device(c, "bob", "PC1", "later-id")
+    assert again["symbol"] == sym
+
+
+def test_device_rename_website(env):
+    app_mod, _ = env
+    c = app_mod.app.test_client()
+    h_admin, _ = _sign_in_device(c, "admin", "ADMIN-PC", "a1")
+    h_bob, _ = _sign_in_device(c, "bob", "BOB-PC", "b1")
+    conn = app_mod.db.connect()
+    ids = {r["device_name"]: r["id"] for r in conn.execute("SELECT id, device_name FROM api_tokens")}
+    conn.close()
+    # bob may rename his own PC, not the admin's.
+    _website_login(c, "bob")
+    c.post(f"/devices/{ids['BOB-PC']}/rename", data={"csrf": "t", "name": "Bob laptop"})
+    assert c.get("/api/v1/revision", headers=h_bob).json["device"]["name"] == "Bob laptop"
+    assert c.post(f"/devices/{ids['ADMIN-PC']}/rename", data={"csrf": "t", "name": "x"}).status_code == 403
+    page = c.get("/").data
+    assert b"Bob laptop" in page and b"pc-symbol" in page
+    # The admin may rename any PC; a bad name changes nothing.
+    c.post("/logout")
+    _website_login(c, "admin")
+    c.post(f"/devices/{ids['BOB-PC']}/rename", data={"csrf": "t", "name": "Front desk (2)"})
+    assert c.get("/api/v1/revision", headers=h_bob).json["device"]["name"] == "Front desk (2)"
+    c.post(f"/devices/{ids['BOB-PC']}/rename", data={"csrf": "t", "name": "<b>"})
+    assert c.get("/api/v1/revision", headers=h_bob).json["device"]["name"] == "Front desk (2)"
+
+
+def test_migration_old_database(env):
+    app_mod, tmp = env
+    old = os.path.join(tmp, "old.db")
+    conn = sqlite3.connect(old)
+    conn.row_factory = sqlite3.Row
+    conn.execute("CREATE TABLE api_tokens (id INTEGER PRIMARY KEY, user_id INTEGER, token_hash TEXT, "
+                 "device_name TEXT, platform TEXT, client_version TEXT, created_at TEXT, last_used_at TEXT)")
+    conn.execute("CREATE TABLE settings (key TEXT PRIMARY KEY, value TEXT NOT NULL)")
+    conn.execute("INSERT INTO api_tokens VALUES (1, 1, 'h1', 'OLD-PC', 'windows', 'v16.0.7', '', '')")
+    conn.execute("INSERT INTO api_tokens VALUES (2, 1, 'h2', 'OLD-PC', 'windows', 'v16.0.7', '', '')")
+    app_mod.db.migrate(conn)
+    assert app_mod.db.ensure_symbols(conn)
+    syms = [r["symbol"] for r in conn.execute("SELECT symbol FROM api_tokens")]
+    assert len(set(syms)) == 2 and all(syms)
+    assert not app_mod.db.ensure_symbols(conn)              # nothing left to do
+    conn.close()
+
+
 def test_website_admin(env):
     app_mod, _ = env
     c = app_mod.app.test_client()

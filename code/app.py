@@ -340,7 +340,8 @@ def health():
 @app.route("/api/v1/auth/token", methods=["POST"])
 def api_token_create():
     """Sign in from Connection Manager.
-    Body: {"username", "password", "device_name", "platform", "client_version"}."""
+    Body: {"username", "password", "device_name", "platform", "client_version", "device_id"}.
+    device_id (v16.0.8) lets a PC keep its badge when it signs in again."""
     conn = get_db()
     b = body()
     username = str(b.get("username") or "")
@@ -352,19 +353,25 @@ def api_token_create():
         return jsonify(error="That username or password is not right."), 401
     _clear_failed_logins(conn, username)
     token = secrets.token_urlsafe(32)
-    conn.execute(
-        "INSERT INTO api_tokens (user_id, token_hash, device_name, platform, client_version, created_at, last_used_at) "
-        "VALUES (?, ?, ?, ?, ?, ?, ?)",
-        (user["id"], _hash_token(token), str(b.get("device_name") or "PC")[:80],
-         str(b.get("platform") or "")[:20], str(b.get("client_version") or "")[:40], db.now(), db.now()))
+    device_id = re.sub(r"[^A-Za-z0-9-]", "", str(b.get("device_id") or ""))[:64]
+    raw_name = str(b.get("device_name") or "PC")
+    device_name = db.clean_device_name(raw_name) or " ".join(raw_name.split())[:db.DEVICE_NAME_MAX] or "PC"
+    cur = conn.execute(
+        "INSERT INTO api_tokens (user_id, token_hash, device_name, platform, client_version, created_at, "
+        "last_used_at, device_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+        (user["id"], _hash_token(token), device_name,
+         str(b.get("platform") or "")[:20], str(b.get("client_version") or "")[:40], db.now(), db.now(), device_id))
+    token_id = cur.lastrowid
     # Keep only each user's newest devices.
     conn.execute("DELETE FROM api_tokens WHERE user_id = ? AND id NOT IN "
                  "(SELECT id FROM api_tokens WHERE user_id = ? ORDER BY id DESC LIMIT ?)",
                  (user["id"], user["id"], MAX_TOKENS_PER_USER))
+    symbol = db.assign_symbol(conn, token_id, device_id)
     conn.commit()
-    log.info("sign-in: %s on %s", user["username"], b.get("device_name"))
+    log.info("sign-in: %s on %s", user["username"], device_name)
     return jsonify(token=token, username=user["username"], is_admin=bool(user["is_admin"]),
-                   server_version=RUNNING_VERSION, api_version=API_VERSION)
+                   server_version=RUNNING_VERSION, api_version=API_VERSION,
+                   device={"name": device_name, "symbol": symbol})
 
 
 @app.route("/api/v1/auth/token", methods=["DELETE"])
@@ -381,7 +388,43 @@ def api_token_revoke_current():
 @api_login_required
 def api_me():
     return jsonify(username=g.user["username"], is_admin=bool(g.user["is_admin"]),
-                   server_version=RUNNING_VERSION, api_version=API_VERSION)
+                   server_version=RUNNING_VERSION, api_version=API_VERSION, device=_this_device())
+
+
+def _this_device():
+    """{"name", "symbol"} of the PC making this API call (gives it a badge if it has none)."""
+    conn = get_db()
+    row = conn.execute("SELECT * FROM api_tokens WHERE id = ?", (g.token_id,)).fetchone()
+    # A PC signed in before v16.0.8 sends its device ID from v16.0.8 on: record it, so the
+    # PC keeps its badge when it signs in again.
+    device_id = re.sub(r"[^A-Za-z0-9-]", "", request.headers.get("X-Device-Id", ""))[:64]
+    changed = False
+    if device_id and not row["device_id"]:
+        conn.execute("UPDATE api_tokens SET device_id = ? WHERE id = ?", (device_id, row["id"]))
+        if row["symbol"]:
+            db.set_setting(conn, "device_symbol:" + device_id, row["symbol"])
+        changed = True
+    if not row["symbol"]:
+        db.assign_symbol(conn, row["id"], device_id or row["device_id"])
+        changed = True
+    if changed:
+        conn.commit()
+        row = conn.execute("SELECT * FROM api_tokens WHERE id = ?", (g.token_id,)).fetchone()
+    return db.device_dict(row)
+
+
+@app.route("/api/v1/device", methods=["PUT", "PATCH"])
+@api_login_required
+def api_device_rename():
+    """Rename this PC (Settings tab, v16.0.8). Body {"name"} -> {"name", "symbol"}."""
+    name = db.clean_device_name(body().get("name"))
+    if not name:
+        return jsonify(error=db.DEVICE_NAME_RULE + "."), 400
+    conn = get_db()
+    conn.execute("UPDATE api_tokens SET device_name = ? WHERE id = ?", (name, g.token_id))
+    conn.commit()
+    log.info("device renamed: %s -> %s", g.user["username"], name)
+    return jsonify(_this_device())
 
 
 @app.route("/api/v1/version")
@@ -433,8 +476,9 @@ def _changed(conn):
 @app.route("/api/v1/revision")
 @api_login_required
 def api_revision():
-    """Cheap poll: the number goes up whenever the connection list changes."""
-    return jsonify(revision=db.revision(get_db()))
+    """Cheap poll: the number goes up whenever the connection list changes.
+    Also this PC's name and badge, so a rename on the website reaches the PC (v16.0.8)."""
+    return jsonify(revision=db.revision(get_db()), device=_this_device())
 
 
 @app.route("/api/v1/connections")
@@ -599,7 +643,8 @@ def _csrf():
 
 @app.context_processor
 def template_globals():
-    return {"version": RUNNING_VERSION, "csrf": _csrf(), "me": g.get("user")}
+    return {"version": RUNNING_VERSION, "csrf": _csrf(), "me": g.get("user"),
+            "symbol_parts": db.symbol_parts, "device_name_max": db.DEVICE_NAME_MAX}
 
 
 @app.route("/login", methods=["GET", "POST"])
@@ -638,6 +683,8 @@ def logout():
 def index():
     conn = get_db()
     daily_backup(conn)
+    if db.ensure_symbols(conn):
+        conn.commit()
     users = conn.execute("SELECT * FROM users ORDER BY username COLLATE NOCASE").fetchall() if g.user["is_admin"] else []
     q = ("SELECT t.*, u.username FROM api_tokens t JOIN users u ON u.id = t.user_id "
          + ("" if g.user["is_admin"] else "WHERE t.user_id = ? ") + "ORDER BY t.last_used_at DESC")
@@ -725,6 +772,24 @@ def page_user_delete(uid):
         conn.commit()
         flash(f"Deleted {user['username']} and signed out their PCs.", "ok")
     return redirect(url_for("index") + "#users")
+
+
+@app.route("/devices/<int:tid>/rename", methods=["POST"])
+@page_login_required()
+def page_device_rename(tid):
+    """Rename a signed-in PC (admins: any PC; users: their own). v16.0.8"""
+    conn = get_db()
+    row = conn.execute("SELECT * FROM api_tokens WHERE id = ?", (tid,)).fetchone() or abort(404)
+    if not g.user["is_admin"] and row["user_id"] != g.user["id"]:
+        abort(403)
+    name = db.clean_device_name(request.form.get("name"))
+    if not name:
+        flash(db.DEVICE_NAME_RULE + ".", "error")
+    elif name != row["device_name"]:
+        conn.execute("UPDATE api_tokens SET device_name = ? WHERE id = ?", (name, tid))
+        conn.commit()
+        flash(f"Renamed {row['device_name']} to {name}. The PC shows the new name within a few seconds.", "ok")
+    return redirect(url_for("index") + "#devices")
 
 
 @app.route("/devices/<int:tid>/delete", methods=["POST"])

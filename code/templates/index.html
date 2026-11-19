@@ -1,3 +1,10 @@
+{#- A PC's badge: a white shape on a coloured circle (same drawing as in the app). -#}
+{% macro pc_symbol(symbol, size=30) -%}
+  {%- set colour, path = symbol_parts(symbol) -%}
+  <svg class="pc-symbol" width="{{ size }}" height="{{ size }}" viewBox="0 0 24 24" role="img"
+       aria-label="Badge: {{ symbol|replace(':', ' ') }}"><title>Badge: {{ symbol|replace(':', ' ') }}</title>
+    <circle cx="12" cy="12" r="12" fill="{{ colour }}"/><path d="{{ path }}" fill="#fff"/></svg>
+{%- endmacro %}
 <!doctype html>
 <html lang="en">
 <head>
@@ -8,6 +15,7 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
 </head>
 <body>
+<script>document.documentElement.classList.add('js');</script>
 <header>
   <div class="wrap">
     <img src="{{ url_for('static', filename='icon.png') }}" alt="">
@@ -107,13 +115,38 @@
 
   <section class="card" id="devices">
     <h2>Signed-in PCs</h2>
+    <p class="muted card-intro">Each PC has its own badge, so PCs with the same name can be told apart.
+      Use the pencil to rename a PC; the new name also appears in Connection Manager on that PC.</p>
     {% if devices %}
     <div class="table-scroll">
     <table>
       <tr><th>PC</th>{% if me.is_admin %}<th>User</th>{% endif %}<th>Client</th><th>Last seen (UTC)</th><th></th></tr>
       {% for d in devices %}
-      <tr>
-        <td>{{ d.device_name }}</td>
+      <tr class="pc-row" id="pc-{{ d.id }}">
+        <td>
+          <div class="pc">
+            {{ pc_symbol(d.symbol) }}
+            <div class="pc-text">
+              <div class="pc-view">
+                <span class="pc-name">{{ d.device_name }}</span>
+                <button type="button" class="icon-btn" title="Rename this PC" aria-label="Rename {{ d.device_name }}"
+                        onclick="pcRename({{ d.id }}, true)">
+                  <svg width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path fill="none" stroke="currentColor"
+                       stroke-width="2" stroke-linecap="round" stroke-linejoin="round"
+                       d="M12 20h9M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>
+                </button>
+              </div>
+              <form class="pc-rename" method="post" action="{{ url_for('page_device_rename', tid=d.id) }}">
+                <input type="hidden" name="csrf" value="{{ csrf }}">
+                <input type="text" name="name" value="{{ d.device_name }}" maxlength="{{ device_name_max }}"
+                       required aria-label="New name for {{ d.device_name }}"
+                       onkeydown="if (event.key === 'Escape') pcRename({{ d.id }}, false)">
+                <button type="submit">Save</button>
+                <button type="button" class="secondary" onclick="pcRename({{ d.id }}, false)">Cancel</button>
+              </form>
+            </div>
+          </div>
+        </td>
         {% if me.is_admin %}<td>{{ d.username }}</td>{% endif %}
         <td><span class="muted">{{ d.platform or '?' }} {{ d.client_version }}</span></td>
         <td><span class="muted">{{ d.last_used_at[:16].replace('T', ' ') }}</span></td>
@@ -134,5 +167,18 @@
   </section>
 </main>
 <footer>Connection Manager Server {{ version }}</footer>
+<script>
+  // Rename a PC in place: show the name box for one row (Escape or Cancel puts the name back).
+  function pcRename(id, on) {
+    document.querySelectorAll('.pc-row.editing').forEach(function (r) { r.classList.remove('editing'); });
+    var row = document.getElementById('pc-' + id);
+    if (!on || !row) return;
+    row.classList.add('editing');
+    var box = row.querySelector('.pc-rename input[name=name]');
+    box.value = row.querySelector('.pc-name').textContent;
+    box.focus();
+    box.select();
+  }
+</script>
 </body>
 </html>

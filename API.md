@@ -15,9 +15,16 @@ Do not break `/api/v1` - older clients keep using it. Add `/api/v2` for incompat
 | Method | Path | Body / answer |
 |---|---|---|
 | GET | `/api/v1/health` | `{"version": "v1.0.0", "api_version": 1}` - no sign-in |
-| POST | `/api/v1/auth/token` | body `{"username", "password", "device_name", "platform": "windows"/"linux", "client_version"}` → `{"token", "username", "is_admin", "server_version", "api_version"}`. 5 wrong passwords lock that username for 15 minutes (429). |
+| POST | `/api/v1/auth/token` | body `{"username", "password", "device_name", "platform": "windows"/"linux", "client_version", "device_id"}` → `{"token", "username", "is_admin", "server_version", "api_version", "device": {"name", "symbol"}}`. `device_id` (v16.0.8, a GUID the PC keeps) gives the PC its old badge back after signing in again. 5 wrong passwords lock that username for 15 minutes (429). |
 | DELETE | `/api/v1/auth/token` | sign this PC out (deletes its token) |
-| GET | `/api/v1/auth/me` | `{"username", "is_admin", "server_version", "api_version"}` |
+| GET | `/api/v1/auth/me` | `{"username", "is_admin", "server_version", "api_version", "device": {"name", "symbol"}}` |
+| PUT | `/api/v1/device` | v16.0.8: rename this PC. `{"name"}` → `{"name", "symbol"}`. 1-60 characters: letters, numbers, spaces and `. _ - ( ) '` (400 otherwise). Admins and owners can also rename a PC on the website. |
+
+**PC badge (`symbol`, v16.0.8):** `"shape:colour"`, e.g. `"star:teal"` - a white shape
+(circle, square, triangle, diamond, star, hexagon) on a coloured circle (blue, teal, green,
+amber, orange, red, purple, slate). The server gives every signed-in PC a different one.
+The drawings are in `code/db.py` (`SYMBOL_SHAPES`, `SYMBOL_COLOURS`) and the clients'
+`Models/DeviceSymbol.cs`.
 
 ## Connections
 
@@ -34,7 +41,7 @@ A connection (as sent to clients - **no password**):
 
 | Method | Path | Body / answer |
 |---|---|---|
-| GET | `/api/v1/revision` | `{"revision": 42}` - goes up on every change; clients poll this every 5 s |
+| GET | `/api/v1/revision` | `{"revision": 42, "device": {"name", "symbol"}}` - goes up on every change; clients poll this every 5 s. `device` (v16.0.8) is this PC's name and badge, so a rename on the website reaches the PC. |
 | GET | `/api/v1/connections` | `{"revision", "connections": [...]}` |
 | POST | `/api/v1/connections` | `{"name", "ipAddress", "location", "username", "password", "connectionType"}` (name, ipAddress, location required) → 201 `{"revision", "connection"}`. Goes to the end of its group. |
 | PUT | `/api/v1/connections/<id>` | same fields; missing/null/"" `password` = keep the saved one; `"clearPassword": true` removes it. A new location moves it to the end of that group. |
