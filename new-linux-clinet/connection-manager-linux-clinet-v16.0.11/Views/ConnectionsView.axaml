@@ -1,0 +1,134 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ConnectionManager.ViewModels"
+             xmlns:m="using:ConnectionManager.Models"
+             xmlns:v="using:ConnectionManager.Views"
+             x:Class="ConnectionManager.Views.ConnectionsView"
+             x:DataType="vm:ConnectionsViewModel">
+
+  <Grid RowDefinitions="Auto,Auto,*,Auto">
+
+    <!-- Toolbar -->
+    <Border Grid.Row="0" Padding="8,12,8,10">
+      <WrapPanel Orientation="Horizontal">
+        <Button Classes="accent toolbar" Command="{Binding OpenAddDialogCommand}" Margin="0,0,8,4">
+          <StackPanel Orientation="Horizontal" Spacing="7">
+            <PathIcon Width="11" Height="11" Data="M 5,0 L 7,0 L 7,5 L 12,5 L 12,7 L 7,7 L 7,12 L 5,12 L 5,7 L 0,7 L 0,5 L 5,5 Z"/>
+            <TextBlock Text="Add Connection"/>
+          </StackPanel>
+        </Button>
+        <Button Classes="toolbar" Content="Edit" Margin="0,0,8,4"
+                Command="{Binding OpenEditDialogCommand}" CommandParameter="{x:Null}"
+                IsEnabled="{Binding HasSelection}"/>
+        <Button Classes="toolbar" Content="Copy" Margin="0,0,8,4" ToolTip.Tip="Duplicate selected connection"
+                Command="{Binding CopyConnectionCommand}" CommandParameter="{x:Null}"
+                IsEnabled="{Binding HasSelection}"/>
+        <Button Classes="toolbar danger" Content="Delete" Margin="0,0,8,4"
+                Command="{Binding DeleteSelectedCommand}"
+                IsEnabled="{Binding HasSelection}"/>
+      </WrapPanel>
+    </Border>
+
+    <!-- Server can't be reached -->
+    <Border Grid.Row="1" Background="{DynamicResource CmBannerBg}" CornerRadius="8" Padding="12,8" Margin="8,0,8,8"
+            IsVisible="{Binding Main.OfflineMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+      <TextBlock Text="{Binding Main.OfflineMessage}"
+                 Foreground="{DynamicResource CmBannerText}" TextWrapping="Wrap" FontSize="12.5"/>
+    </Border>
+
+    <!-- Connection list -->
+    <ScrollViewer Grid.Row="2" HorizontalScrollBarVisibility="Disabled" Padding="8,0,12,8">
+      <ItemsControl ItemsSource="{Binding ConnectionGroups}">
+        <ItemsControl.ItemTemplate>
+          <DataTemplate x:DataType="m:ConnectionGroup">
+            <Expander IsExpanded="{Binding IsExpanded}" Margin="0,0,0,4">
+              <Expander.Header>
+                <StackPanel Orientation="Horizontal" Spacing="6">
+                  <TextBlock Text="{Binding Location}" FontSize="13" FontWeight="Bold"
+                             Foreground="{DynamicResource CmTextMuted}" VerticalAlignment="Center"/>
+                  <TextBlock Text="{Binding CountText}" FontSize="12"
+                             Foreground="{DynamicResource CmTextMuted}" VerticalAlignment="Center"/>
+                </StackPanel>
+              </Expander.Header>
+
+              <ItemsControl ItemsSource="{Binding Connections}">
+                <ItemsControl.ItemTemplate>
+                  <DataTemplate x:DataType="m:Connection">
+                    <Border Classes="row" Classes.selected="{Binding IsSelected}"
+                            PointerPressed="Row_PointerPressed" DoubleTapped="Row_DoubleTapped">
+                      <Grid ColumnDefinitions="Auto,Auto,*,Auto,Auto">
+                        <!-- Online indicator -->
+                        <Ellipse Grid.Column="0" Classes="dot" Classes.online="{Binding IsOnline}"
+                                 Margin="2,0,12,0" VerticalAlignment="Center"
+                                 ToolTip.Tip="Green = answers ping from this PC"/>
+                        <!-- Type badge -->
+                        <Border Grid.Column="1" Classes="badge" Margin="0,0,12,0" VerticalAlignment="Center"
+                                Background="{Binding ConnectionType, Converter={StaticResource TypeToBrush}}">
+                          <TextBlock Text="{Binding Badge}"/>
+                        </Border>
+                        <!-- Name and address -->
+                        <StackPanel Grid.Column="2" VerticalAlignment="Center">
+                          <TextBlock Text="{Binding Name}" FontSize="14.5" FontWeight="SemiBold"
+                                     Foreground="{DynamicResource CmText}" TextTrimming="CharacterEllipsis"/>
+                          <TextBlock Text="{Binding Detail}" FontSize="12.5"
+                                     Foreground="{DynamicResource CmTextMuted}" TextTrimming="CharacterEllipsis"/>
+                        </StackPanel>
+                        <!-- Move up / down -->
+                        <StackPanel Grid.Column="3" Orientation="Horizontal" Margin="8,0" VerticalAlignment="Center">
+                          <Button Classes="icon" ToolTip.Tip="Move Up" Click="MoveUp_Click">
+                            <PathIcon Data="M 0,8 L 6,2 L 12,8 L 10.6,9.4 L 6,4.8 L 1.4,9.4 Z"/>
+                          </Button>
+                          <Button Classes="icon" ToolTip.Tip="Move Down" Click="MoveDown_Click">
+                            <PathIcon Data="M 0,4 L 1.4,2.6 L 6,7.2 L 10.6,2.6 L 12,4 L 6,10 Z"/>
+                          </Button>
+                        </StackPanel>
+                        <!-- Connect -->
+                        <Button Grid.Column="4" Classes="accent" Content="Connect" Padding="16,7"
+                                VerticalAlignment="Center" Click="Connect_Click"/>
+                      </Grid>
+                    </Border>
+                  </DataTemplate>
+                </ItemsControl.ItemTemplate>
+              </ItemsControl>
+            </Expander>
+          </DataTemplate>
+        </ItemsControl.ItemTemplate>
+      </ItemsControl>
+    </ScrollViewer>
+
+    <!-- Empty state -->
+    <StackPanel Grid.Row="2" HorizontalAlignment="Center" VerticalAlignment="Center" Spacing="8"
+                IsVisible="{Binding IsEmpty}">
+      <Image Source="/Assets/icon.png" Width="72" Height="72" Opacity="0.5" Margin="0,0,0,8"/>
+      <TextBlock Text="No Connections" FontSize="20" FontWeight="SemiBold"
+                 Foreground="{DynamicResource CmTextMuted}" HorizontalAlignment="Center"/>
+      <TextBlock Text="Click 'Add Connection' to get started" FontSize="14"
+                 Foreground="{DynamicResource CmTextMuted}" HorizontalAlignment="Center"/>
+    </StackPanel>
+
+    <!-- Status line -->
+    <Border Grid.Row="3" BorderBrush="{DynamicResource CmBorder}" BorderThickness="0,1,0,0" Padding="12,7"
+            IsVisible="{Binding Status, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+      <TextBlock Text="{Binding Status}" FontSize="12.5" Foreground="{DynamicResource CmTextMuted}" TextWrapping="Wrap"/>
+    </Border>
+
+    <!-- Add / Edit dialog -->
+    <Border Grid.RowSpan="4" Classes="overlay" IsVisible="{Binding IsEditorOpen}">
+      <v:ConnectionEditorView DataContext="{Binding Editor}"/>
+    </Border>
+
+    <!-- Delete confirmation -->
+    <Border Grid.RowSpan="4" Classes="overlay" IsVisible="{Binding IsConfirmDeleteOpen}">
+      <Border Classes="dialog" MaxWidth="420">
+        <StackPanel Spacing="14">
+          <TextBlock Classes="h1" Text="Delete connection?"/>
+          <TextBlock Text="{Binding ConfirmDeleteText}" TextWrapping="Wrap" Foreground="{DynamicResource CmText}"/>
+          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10">
+            <Button Content="Cancel" Command="{Binding CancelDeleteCommand}"/>
+            <Button Classes="deletebig" Content="Delete" Command="{Binding ConfirmDeleteCommand}"/>
+          </StackPanel>
+        </StackPanel>
+      </Border>
+    </Border>
+  </Grid>
+</UserControl>

@@ -1,0 +1,111 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ConnectionManager.ViewModels"
+             xmlns:v="using:ConnectionManager.Views"
+             x:Class="ConnectionManager.Views.SettingsView"
+             x:DataType="vm:SettingsViewModel">
+
+  <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+    <StackPanel MaxWidth="620" Margin="8,16,12,16">
+
+      <!-- This PC: its name and badge on the server (v16.0.8) -->
+      <TextBlock Classes="h2" Text="This PC"/>
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <TextBlock Text="PC name" FontWeight="SemiBold" Foreground="{DynamicResource CmText}"/>
+          <!-- Badge, name box and button on one line. The badge looks exactly like the website's
+               (v16.0.10): 30 px, a 2 px gap in the card colour, then a 1 px grey ring. -->
+          <Grid ColumnDefinitions="Auto,*,Auto">
+            <Border Width="36" Height="36" CornerRadius="18" Padding="2" BorderThickness="1"
+                    Background="{DynamicResource CmSurface}" BorderBrush="{DynamicResource CmBorder}"
+                    VerticalAlignment="Center" Margin="0,0,12,0">
+              <v:PcSymbolBadge Symbol="{Binding DeviceSymbol}" Width="30" Height="30"/>
+            </Border>
+            <TextBox Grid.Column="1" Text="{Binding PcName}" MaxLength="60" Watermark="e.g. duncan-middlemuir-pc"
+                     VerticalAlignment="Center">
+              <TextBox.KeyBindings>
+                <KeyBinding Gesture="Enter" Command="{Binding SaveNameCommand}"/>
+              </TextBox.KeyBindings>
+            </TextBox>
+            <Button Grid.Column="2" Classes="accent" Content="Save name" Margin="8,0,0,0"
+                    VerticalAlignment="Center" Command="{Binding SaveNameCommand}"/>
+          </Grid>
+          <TextBlock Classes="namestatus" Classes.fail="{Binding !IsNameStatusSuccess}" TextWrapping="Wrap"
+                     FontSize="13" FontWeight="SemiBold" Text="{Binding NameStatus}"
+                     IsVisible="{Binding NameStatus, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+            <TextBlock.Styles>
+              <Style Selector="TextBlock.namestatus">
+                <Setter Property="Foreground" Value="{DynamicResource CmOkText}"/>
+              </Style>
+              <Style Selector="TextBlock.namestatus.fail">
+                <Setter Property="Foreground" Value="{DynamicResource CmErrText}"/>
+              </Style>
+            </TextBlock.Styles>
+          </TextBlock>
+          <TextBlock Classes="muted" TextWrapping="Wrap"
+                     Text="This name and badge identify this PC on the server website (Signed-in PCs). A name changed there appears here too."/>
+        </StackPanel>
+      </Border>
+
+      <!-- Remote Desktop Security (same as the old program) -->
+      <TextBlock Classes="h2" Text="Remote Desktop Security"/>
+      <Border Classes="card">
+        <StackPanel>
+          <TextBlock Text="Allow the remote computer to access the following resources on my computer:"
+                     FontWeight="SemiBold" TextWrapping="Wrap" Foreground="{DynamicResource CmText}" Margin="0,0,0,10"/>
+          <CheckBox Content="Clipboard" IsChecked="{Binding ShareClipboard}"/>
+          <TextBlock Classes="muted" Margin="28,6,0,0"
+                     Text="When enabled, every RDP connection can share the clipboard between this computer and the remote computer (copy and paste both ways)."/>
+        </StackPanel>
+      </Border>
+
+      <!-- Startup -->
+      <TextBlock Classes="h2" Text="Startup"/>
+      <Border Classes="card">
+        <StackPanel Spacing="8">
+          <CheckBox Content="{Binding StartWithOsLabel}" IsChecked="{Binding StartWithOs}"/>
+          <CheckBox Content="Start with Connection Manager Minimised" IsChecked="{Binding StartMinimized}"/>
+        </StackPanel>
+      </Border>
+
+      <!-- Server -->
+      <TextBlock Classes="h2" Text="Server"/>
+      <Border Classes="card">
+        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto">
+          <StackPanel Grid.RowSpan="2" Spacing="2">
+            <TextBlock Text="{Binding ServerUrl}" FontWeight="SemiBold" Foreground="{DynamicResource CmText}"
+                       TextTrimming="CharacterEllipsis"/>
+            <TextBlock Classes="muted">
+              <Run Text="Signed in as"/>
+              <Run Text="{Binding SignedInAs}" FontWeight="SemiBold"/>
+            </TextBlock>
+            <TextBlock Classes="muted" Margin="0,6,0,0"
+                       Text="The connection list is shared through this server. These settings are kept on this PC only."/>
+          </StackPanel>
+          <Button Grid.Column="1" Content="Sign out" Classes="danger" VerticalAlignment="Top" Margin="12,0,0,0"
+                  Command="{Binding SignOutCommand}"/>
+        </Grid>
+      </Border>
+
+      <!-- Status message -->
+      <Border CornerRadius="8" Padding="12,9" Classes="status" Classes.fail="{Binding !IsStatusSuccess}"
+              IsVisible="{Binding StatusMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+        <Border.Styles>
+          <Style Selector="Border.status">
+            <Setter Property="Background" Value="{DynamicResource CmOkBg}"/>
+          </Style>
+          <Style Selector="Border.status TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource CmOkText}"/>
+          </Style>
+          <Style Selector="Border.status.fail">
+            <Setter Property="Background" Value="{DynamicResource CmErrBg}"/>
+          </Style>
+          <Style Selector="Border.status.fail TextBlock">
+            <Setter Property="Foreground" Value="{DynamicResource CmErrText}"/>
+          </Style>
+        </Border.Styles>
+        <TextBlock Text="{Binding StatusMessage}" TextWrapping="Wrap" FontSize="13"/>
+      </Border>
+    </StackPanel>
+  </ScrollViewer>
+</UserControl>
