@@ -48,7 +48,7 @@ A connection (as sent to clients - **no password**):
 
 | Method | Path | Body / answer |
 |---|---|---|
-| GET | `/api/v1/version` | `{"server_version", "api_version", "clients": {"windows": {"version", "file", "sha256", "size", "url"}, "linux": {...}, "linux-deb": {...}}}` |
+| GET | `/api/v1/version` | `{"server_version", "api_version", "clients": {"windows": {"version", "file", "sha256", "size", "url"}, "linux": {...}, "linux-deb": {...}}, "auto_update": true}` - `auto_update` (v16.0.7) is the website's Settings switch: true = clients install a newer build by themselves. |
 | GET | `/api/v1/downloads/windows` | `ConnectionManager.exe` |
 | GET | `/api/v1/downloads/linux` | `connection-manager-linux-x64.tar.gz` (folder `connection-manager/` with `ConnectionManager`, `icon.png`, `install.sh`). Used by ~/.local installs and by v16.0.0 clients. |
 | GET | `/api/v1/downloads/linux-deb` | `connection-manager_X.Y.Z_amd64.deb` (v16.0.1+). Used by /opt (.deb) installs. |

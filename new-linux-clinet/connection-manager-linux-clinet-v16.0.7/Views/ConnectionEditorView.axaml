@@ -1,0 +1,48 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ConnectionManager.ViewModels"
+             x:Class="ConnectionManager.Views.ConnectionEditorView"
+             x:DataType="vm:ConnectionEditorViewModel">
+
+  <Border Classes="dialog" Width="440" MaxWidth="440">
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled" MaxHeight="720">
+      <StackPanel>
+        <TextBlock Classes="h1" Text="{Binding Title}" Margin="0,0,0,6"/>
+
+        <TextBlock Classes="label" Text="Connection Type"/>
+        <WrapPanel>
+          <RadioButton GroupName="type" Content="RDP" IsChecked="{Binding IsRdp}" Margin="0,0,18,0"/>
+          <RadioButton GroupName="type" Content="Web" IsChecked="{Binding IsWeb}" Margin="0,0,18,0"/>
+          <RadioButton GroupName="type" Content="Putty" IsChecked="{Binding IsPutty}" Margin="0,0,18,0"/>
+          <RadioButton GroupName="type" Content="RustDesk" IsChecked="{Binding IsRustDesk}"/>
+        </WrapPanel>
+
+        <TextBlock Classes="label" Text="Connection Name *"/>
+        <TextBox Text="{Binding Name}" Watermark="e.g. Office Server"/>
+
+        <TextBlock Classes="label" Text="{Binding AddressLabel}"/>
+        <TextBox Text="{Binding IpAddress}" Watermark="e.g. 192.168.1.10"/>
+
+        <TextBlock Classes="label" Text="Location (for grouping) *"/>
+        <AutoCompleteBox Text="{Binding Location}" ItemsSource="{Binding KnownLocations}"
+                         FilterMode="ContainsOrdinal" MinimumPrefixLength="0" Watermark="e.g. Head Office"/>
+
+        <StackPanel IsVisible="{Binding ShowCredentials}">
+          <TextBlock Classes="label" Text="Username (optional)"/>
+          <TextBox Text="{Binding Username}" Watermark="DOMAIN\user or user"/>
+          <TextBlock Classes="label" Text="{Binding PasswordLabel}"/>
+          <TextBox Text="{Binding Password}" PasswordChar="●" RevealPassword="False" Classes="revealPasswordButton"/>
+        </StackPanel>
+
+        <TextBlock Classes="error" Text="{Binding ErrorMessage}" Margin="0,14,0,0"
+                   IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Spacing="10" Margin="0,22,0,0">
+          <Button Content="Cancel" Command="{Binding CancelCommand}"/>
+          <Button Classes="accent" Content="Save" Command="{Binding SaveCommand}" IsDefault="True"
+                  IsEnabled="{Binding !IsSaving}" MinWidth="90"/>
+        </StackPanel>
+      </StackPanel>
+    </ScrollViewer>
+  </Border>
+</UserControl>

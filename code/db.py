@@ -14,7 +14,9 @@ connections  the shared connection list: name, address (IP / URL / RustDesk ID),
              Key Server key (keys.encrypt), type and the order inside its group.
 settings     key/value store: "revision" (goes up by one on every change to the
              connection list, so clients can cheaply ask "has anything
-             changed?"), login lockouts, last backup date.
+             changed?"), login lockouts, last backup date, "auto_update"
+             (v16.0.7: "1"/"0", the website switch for automatic client updates;
+             missing = on).
 
 The JSON shape sent to the clients (connection_dict) uses the same field names
 as the Windows/Linux client's Connection model (camelCase).
@@ -103,6 +105,11 @@ def get_setting(conn, key, default=""):
 def set_setting(conn, key, value):
     conn.execute("INSERT INTO settings (key, value) VALUES (?, ?) "
                  "ON CONFLICT(key) DO UPDATE SET value = excluded.value", (key, str(value)))
+
+
+def auto_update(conn):
+    """Website switch: do Connection Manager clients update themselves? (default on)"""
+    return get_setting(conn, "auto_update", "1") == "1"
 
 
 def revision(conn):

@@ -151,6 +151,29 @@ def test_version_and_download(env):
     assert c.get("/api/v1/downloads/linux-deb", headers=h).data == b"deb!"
 
 
+def test_auto_update_switch(env):
+    app_mod, _ = env
+    c = app_mod.app.test_client()
+    h = sign_in(c)
+    assert c.get("/api/v1/version", headers=h).json["auto_update"] is True   # default on
+    conn = app_mod.db.connect()
+    app_mod.db.set_setting(conn, "auto_update", "0")
+    conn.commit()
+    conn.close()
+    assert c.get("/api/v1/version", headers=h).json["auto_update"] is False
+    # Website switch (admin only): ticking sends "0" and "1", unticking only "0".
+    with c.session_transaction() as s:
+        s["csrf"] = "t"
+    c.post("/login", data={"username": "admin", "password": "password123", "csrf": "t"})
+    with c.session_transaction() as s:
+        s["csrf"] = "t"
+    c.post("/settings/auto-update", data={"csrf": "t", "auto_update": ["0", "1"]})
+    assert c.get("/api/v1/version", headers=h).json["auto_update"] is True
+    c.post("/settings/auto-update", data={"csrf": "t", "auto_update": "0"})
+    assert c.get("/api/v1/version", headers=h).json["auto_update"] is False
+    assert b"Automatically update Connection Manager on every PC" in c.get("/").data
+
+
 def test_website_admin(env):
     app_mod, _ = env
     c = app_mod.app.test_client()

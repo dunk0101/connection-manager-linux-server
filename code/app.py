@@ -387,14 +387,16 @@ def api_me():
 @app.route("/api/v1/version")
 @api_login_required
 def api_version():
-    """Server version plus the newest client build for each platform."""
+    """Server version plus the newest client build for each platform, and whether clients
+    should install a newer build by themselves (the website's Automatic updates switch)."""
     clients = {}
     for p in PLATFORMS:
         info = download_info(p)
         if info:
             clients[p] = {"version": info["version"], "file": info["file"], "sha256": info["sha256"],
                           "size": info.get("size", 0), "url": f"/api/v1/downloads/{p}"}
-    return jsonify(server_version=RUNNING_VERSION, api_version=API_VERSION, clients=clients)
+    return jsonify(server_version=RUNNING_VERSION, api_version=API_VERSION, clients=clients,
+                   auto_update=db.auto_update(get_db()))
 
 
 @app.route("/api/v1/downloads/<platform>")
@@ -642,7 +644,8 @@ def index():
     devices = conn.execute(q, () if g.user["is_admin"] else (g.user["id"],)).fetchall()
     counts = conn.execute("SELECT COUNT(*) AS n, COUNT(DISTINCT location) AS l FROM connections").fetchone()
     return render_template("index.html", users=users, devices=devices, counts=counts,
-                           downloads={p: download_info(p) for p in PLATFORMS})
+                           downloads={p: download_info(p) for p in PLATFORMS},
+                           auto_update=db.auto_update(conn))
 
 
 @app.route("/download/<platform>")
@@ -656,6 +659,20 @@ def _valid_new_password(pw):
         flash(f"The password must be at least {MIN_PASSWORD} characters.", "error")
         return False
     return True
+
+
+@app.route("/settings/auto-update", methods=["POST"])
+@page_login_required(admin=True)
+def page_auto_update():
+    """Settings card: turn automatic updates on or off for every PC (v16.0.7)."""
+    conn = get_db()
+    # The form sends a hidden "0" plus "1" from the ticked box, so look at every value.
+    on = "1" in request.form.getlist("auto_update")
+    db.set_setting(conn, "auto_update", "1" if on else "0")
+    conn.commit()
+    flash("Automatic updates are on: every PC installs a new version by itself (within an hour)."
+          if on else "Automatic updates are off: PCs update only from their About tab.", "ok")
+    return redirect(url_for("index") + "#settings")
 
 
 @app.route("/users", methods=["POST"])
