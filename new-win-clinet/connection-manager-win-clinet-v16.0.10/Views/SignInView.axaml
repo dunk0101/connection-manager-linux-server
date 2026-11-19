@@ -1,0 +1,46 @@
+<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:vm="using:ConnectionManager.ViewModels"
+             x:Class="ConnectionManager.Views.SignInView"
+             x:DataType="vm:SignInViewModel">
+
+  <Grid Background="{DynamicResource CmWindowBg}">
+    <!-- Blue band behind the card -->
+    <Border Height="230" VerticalAlignment="Top" Background="{StaticResource CmHeaderBrush}"/>
+
+    <ScrollViewer HorizontalScrollBarVisibility="Disabled">
+      <Border Classes="dialog" Width="380" Margin="16,64,16,24" VerticalAlignment="Top">
+        <StackPanel>
+          <Image Source="/Assets/icon.png" Width="64" Height="64" HorizontalAlignment="Center" Margin="0,4,0,10"/>
+          <TextBlock Text="Connection Manager" FontSize="22" FontWeight="SemiBold" HorizontalAlignment="Center"
+                     Foreground="{DynamicResource CmText}"/>
+          <TextBlock Text="Sign in to your connection server" Classes="muted" HorizontalAlignment="Center"
+                     Margin="0,2,0,8"/>
+
+          <Border Background="{DynamicResource CmBannerBg}" CornerRadius="8" Padding="10,8" Margin="0,8,0,0"
+                  IsVisible="{Binding InfoMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}">
+            <TextBlock Text="{Binding InfoMessage}" Foreground="{DynamicResource CmBannerText}" TextWrapping="Wrap" FontSize="12.5"/>
+          </Border>
+
+          <TextBlock Classes="label" Text="Server address"/>
+          <TextBox Text="{Binding ServerUrl}"/>
+          <TextBlock Classes="label" Text="Username"/>
+          <TextBox Text="{Binding Username}" Watermark="Your username"/>
+          <TextBlock Classes="label" Text="Password"/>
+          <TextBox Text="{Binding Password}" PasswordChar="●" Classes="revealPasswordButton" Watermark="Your password"/>
+
+          <TextBlock Classes="error" Text="{Binding ErrorMessage}" Margin="0,12,0,0"
+                     IsVisible="{Binding ErrorMessage, Converter={x:Static StringConverters.IsNotNullOrEmpty}}"/>
+
+          <Button Classes="accent" Content="Sign in" HorizontalAlignment="Stretch" HorizontalContentAlignment="Center"
+                  Padding="0,10" Margin="0,20,0,4" IsDefault="True"
+                  Command="{Binding SignInCommand}" IsEnabled="{Binding !IsBusy}"/>
+          <ProgressBar IsIndeterminate="True" Height="3" IsVisible="{Binding IsBusy}" Margin="0,4,0,0"/>
+
+          <TextBlock Text="{Binding VersionText}" FontSize="11.5" Foreground="{DynamicResource CmTextMuted}"
+                     HorizontalAlignment="Center" Margin="0,14,0,0"/>
+        </StackPanel>
+      </Border>
+    </ScrollViewer>
+  </Grid>
+</UserControl>
